@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ user.name }} • RoomRent</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg1:#1e3a8a;
+      --bg2:#0f172a;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --text:#111827;
+      --accent:#2563eb;
+      --pill:#f1f5f9;
+      --shadow:0 20px 40px rgba(0,0,0,.2);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh;
+      font-family:"Poppins",system-ui,sans-serif;
+      background:linear-gradient(135deg, var(--bg1), var(--bg2));
+      display:grid; place-items:center; padding:40px 16px; color:var(--text);
+    }
+
+    .actions{
+      position:absolute; top:16px; right:16px; display:flex; gap:10px; z-index:10;
+    }
+    .actions a{
+      text-decoration:none; font-weight:600; font-size:.9rem; color:#fff;
+      background:rgba(255,255,255,.15); padding:8px 14px; border-radius:999px;
+      backdrop-filter:blur(4px); transition:.3s;
+    }
+    .actions a:hover{background:rgba(255,255,255,.25)}
+
+    .card{
+      position:relative; width:min(800px,95vw); background:var(--card);
+      border-radius:20px; box-shadow:var(--shadow); padding:110px 32px 32px;
+      text-align:center; overflow:hidden;
+    }
+
+    .avatar{
+      width:160px; height:160px; border-radius:50%;
+      background:#e5e7eb url("{{ user.avatar_url if user.avatar_url else 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }}") center/cover no-repeat;
+      position:absolute; left:50%; top:20px; transform:translateX(-50%);
+      border:6px solid #fff; box-shadow:0 10px 25px rgba(0,0,0,.2);
+    }
+
+    .name{margin-top:90px; font-weight:700; font-size:1.6rem; color:var(--text)}
+    .sub{color:var(--muted); font-size:.95rem; margin-top:4px}
+    .role{margin:14px auto 20px; max-width:60ch; line-height:1.6; color:#334155}
+
+    .stats{display:flex; justify-content:center; flex-wrap:wrap; gap:28px; margin:20px 0 26px}
+    .stat{min-width:90px; text-align:center}
+    .num{display:block; font-weight:700; font-size:1.3rem; color:var(--accent)}
+    .label{font-size:.82rem; color:var(--muted)}
+
+    .btn{
+      display:inline-block; text-decoration:none;
+      background:var(--accent); color:#fff; font-weight:600;
+      padding:12px 24px; border-radius:999px; box-shadow:0 10px 20px rgba(37,99,235,.3);
+    }
+
+    .tags{margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
+    .pill{padding:6px 12px; background:var(--pill); border-radius:999px; font-size:.82rem; color:#1e293b;}
+    .foot{margin-top:22px; font-size:.8rem; color:#9ca3af}
+  </style>
+</head>
+
+<body>
+  <div class="actions">
+    <a href="#">Edit</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+  </div>
+
+  <article class="card">
+    <div class="avatar"></div>
+    <h2 class="name">{{ user.name }}</h2>
+    <p class="sub">{{ user.city }}</p>
+
+    <p class="role">
+      {{ user.role }} • {{ user.email }} • {{ user.mobile }}
+    </p>
+
+    <div class="stats">
+      {% if user.is_owner %}
+        <div class="stat"><span class="num">{{ user.total_rooms or 0 }}</span><span class="label">Rooms</span></div>
+        <div class="stat"><span class="num">{{ user.total_bookings or 0 }}</span><span class="label">Bookings</span></div>
+        <div class="stat"><span class="num">{{ user.rating or '4.9★' }}</span><span class="label">Rating</span></div>
+      {% else %}
+        <div class="stat"><span class="num">{{ user.bookings or 0 }}</span><span class="label">Bookings</span></div>
+        <div class="stat"><span class="num">{{ user.favorites or 0 }}</span><span class="label">Favorites</span></div>
+        <div class="stat"><span class="num">{{ user.reviews or 0 }}</span><span class="label">Reviews</span></div>
+      {% endif %}
+    </div>
+
+    {% if user.is_owner %}
+      <a class="btn" href="{{ url_for('my_listings') }}">View My Listings</a>
+    {% else %}
+      <a class="btn" href="{{ url_for('view_rooms') }}">Browse Rooms</a>
+    {% endif %}
+
+    <div class="tags">
+      <span class="pill">Wi-Fi</span>
+      <span class="pill">24x7 Water</span>
+      <span class="pill">Safe Area</span>
+      <span class="pill">Verified</span>
+    </div>
+
+    <p class="foot">Joined • {{ user.joined or 2025 }}</p>
+  </article>
+</body>
+</html>

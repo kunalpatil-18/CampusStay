@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Rental Rooms</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <style>
+    /* ===== Global ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== Navbar ===== */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #2c3e50;
+      padding: 10px 20px;
+      color: #fff;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      list-style: none;
+    }
+
+    .nav-links li {
+      margin: 0 15px;
+      position: relative;
+    }
+
+    .nav-links a {
+      color: white;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    .nav-links a:hover {
+      color: #f39c12;
+    }
+
+    /* ===== Dropdown ===== */
+    .dropdown {
+      position: relative;
+    }
+
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 35px;
+      right: 0;
+      background: #fff;
+      color: #333;
+      border-radius: 5px;
+      list-style: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      overflow: hidden;
+      min-width: 150px;
+    }
+
+    .dropdown-menu li {
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .dropdown-menu li:hover {
+      background: #f5f5f5;
+    }
+
+    .dropdown:hover .dropdown-menu {
+      display: block;
+    }
+
+    /* ===== Layout ===== */
+    .dashboard {
+      display: flex;
+      flex: 1;
+    }
+
+    /* Sidebar for Filters */
+    .filters {
+      width: 250px;
+      background: #fff;
+      padding: 20px;
+      border-right: 1px solid #ddd;
+    }
+
+    .filters h3 {
+      margin-bottom: 15px;
+      color: #2c3e50;
+      border-bottom: 2px solid #f39c12;
+      padding-bottom: 5px;
+    }
+
+    .filters label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .filters input,
+    .filters select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+
+    .filters input[type="checkbox"] {
+      width: auto;
+      margin-right: 8px;
+    }
+
+    .apply-btn {
+      background: #2c3e50;
+      color: #fff;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .apply-btn:hover {
+      background: #f39c12;
+    }
+
+    /* ===== Main Content ===== */
+    .room-section {
+      flex: 1;
+      padding: 20px;
+    }
+
+    .room-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .room-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+
+    .room-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .room-card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+    }
+
+    .room-info {
+      padding: 15px;
+    }
+
+    .room-info h4 {
+      font-size: 16px;
+      color: #2c3e50;
+      margin-bottom: 8px;
+    }
+
+    .room-info p {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    .room-info .rent {
+      font-weight: bold;
+      color: #000;
+    }
+
+    .rating {
+      color: #f39c12;
+      font-size: 16px;
+    }
+
+    /* ===== Footer ===== */
+    footer {
+      background: #2c3e50;
+      color: #fff;
+      text-align: center;
+      padding: 12px;
+      font-size: 15px;
+    }
+
+    @media(max-width: 768px) {
+      .dashboard {
+        flex-direction: column;
+      }
+      .filters {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  
+<!-- Navbar -->
+<nav style="background-color: #2c3e50; color: white; display: flex; justify-content: space-between; align-items: center; padding: 12px 40px; font-family: Arial, sans-serif;">
+
+  <!-- Left Side: Logo + Brand -->
+  <div style="display: flex; align-items: center;">
+    <span style="font-size: 22px; margin-right: 8px;">🏠</span>
+    <span style="font-size: 20px; font-weight: bold;">RoomRent</span>
+  </div>
+
+  <!-- Right Side: Menu -->
+  <div style="display: flex; align-items: center; gap: 25px; font-size: 16px;">
+    <a href="/OwnerDashboard" style="color: white; text-decoration: none;">Home</a>
+    <a href="/my_listings" style="color: white; text-decoration: none;">My Listing</a>
+
+    <!-- Dropdown -->
+    <div class="dropdown" style="position: relative;">
+      <button style="background: none; border: none; color: white; font-size: 16px; cursor: pointer;">Profile ▾</button>
+
+      <!-- Dropdown Menu -->
+      <div class="dropdown-content" style="
+          display: none;
+          position: absolute;
+          right: 0;
+          top: 100%;
+          background-color: #ffffff;
+          color: black;
+          min-width: 150px;
+          border-radius: 6px;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+          overflow: hidden;
+          z-index: 999;">
+        <a href="{{ url_for('profile', username=session['username']) }}" style="display: block; padding: 10px 15px; text-decoration: none; color: #333;">Profile</a>
+        <a href="#" id="darkModeToggle" style="display: block; padding: 10px 15px; text-decoration: none; color: #333;">Dark Mode</a>
+        <a href="/logout" style="display: block; padding: 10px 15px; text-decoration: none; color: #333;">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Dropdown + Dark Mode Script -->
+<script>
+  const dropdown = document.querySelector('.dropdown');
+  const dropdownContent = dropdown.querySelector('.dropdown-content');
+  const darkToggle = document.getElementById('darkModeToggle');
+
+  // Dropdown hover fix
+  dropdown.addEventListener('mouseenter', () => {
+    dropdownContent.style.display = 'block';
+  });
+  dropdown.addEventListener('mouseleave', () => {
+    dropdownContent.style.display = 'none';
+  });
+
+  // Apply dark mode styles
+  function applyDarkMode(isDark) {
+    const body = document.body;
+    const cards = document.querySelectorAll('.room-card'); // class on your room boxes
+
+    if (isDark) {
+      body.style.backgroundColor = '#121212';
+      body.style.color = '#f5f5f5';
+      cards.forEach(card => {
+        card.style.backgroundColor = '#1e1e1e';
+        card.style.color = '#f5f5f5';
+        card.style.boxShadow = '0 2px 6px rgba(255, 255, 255, 0.1)';
+      });
+    } else {
+      body.style.backgroundColor = '#f5f5f5';
+      body.style.color = '#000';
+      cards.forEach(card => {
+        card.style.backgroundColor = '#ffffff';
+        card.style.color = '#000';
+        card.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.1)';
+      });
+    }
+  }
+
+  // Load theme preference
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark') applyDarkMode(true);
+
+  // Toggle theme
+  darkToggle.addEventListener('click', () => {
+    const isDark = localStorage.getItem('theme') === 'dark';
+    if (isDark) {
+      applyDarkMode(false);
+      localStorage.setItem('theme', 'light');
+    } else {
+      applyDarkMode(true);
+      localStorage.setItem('theme', 'dark');
+    }
+  });
+
+  // Reapply dark mode after filtering
+  const observer = new MutationObserver(() => {
+    if (localStorage.getItem('theme') === 'dark') applyDarkMode(true);
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+</script>
+
+
+  <!-- Main Dashboard -->
+  <div class="dashboard">
+    <!-- Filters -->
+    <form action="{{ url_for('filter_rooms') }}" method="GET">
+      <div class="filters">
+        <h3>Filter Rooms</h3>
+
+        <label>Rent Range (₹):</label>
+        <input type="number" name="min_rent" placeholder="Min Rent">
+        <input type="number" name="max_rent" placeholder="Max Rent">
+
+        <label>City:</label>
+        <input type="text" name="city" placeholder="Enter city name">
+
+        <label><input type="checkbox" name="light_bill"> Light Bill Included</label>
+        <label><input type="checkbox" name="water_bill"> Water Bill Included</label>
+
+        <button class="apply-btn" type="submit">Apply Filters</button>
+      </div>
+    </form>
+
+
+
+    <!-- Rooms Display -->
+    <div class="room-section">
+        <h3>Available Rooms</h3>
+        <div class="room-grid">
+        {% for room in rooms %}
+          <div class="room-card">
+            {% if room.image %}
+              <img src="data:{{ room.mime_type }};base64,{{ room.image }}" alt="Room" style="width:100%;height:180px;object-fit:cover;">
+            {% else %}
+              <img src="https://via.placeholder.com/300x200" alt="Room" />
+            {% endif %}
+
+
+            <p><strong>Address:</strong> {{ room.address }}</p>
+            <p><b>City:</b> {{ room.city }}</p>
+            <p><strong>Type:</strong> {{ room.room_type }}</p>
+            <p><strong>Rent:</strong> ₹{{ room.rent }}</p>
+          </div>
+        {% endfor %}
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    Rental rooms for college students
+  </footer>
+</body>
+</html>
