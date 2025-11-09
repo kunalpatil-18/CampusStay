@@ -1,0 +1,35 @@
+{% if show_feedback %}
+<div id="feedbackModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000;">
+    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 400px; max-width: 90%;">
+        <h3>Rate Your App Experience</h3>
+        <p>Before you continue, how would you rate your experience on our app?</p>
+        
+        <form id="appFeedbackForm" method="POST" action="{{ url_for('logout') }}">
+            <div style="margin-bottom: 15px; display: flex; justify-content: center; gap: 10px;">
+                {% for i in range(1, 6) %}
+                    <label><input type="radio" name="rating" value="{{ i }}" required> {{ i }}</label>
+                {% endfor %}
+            </div>
+            
+            <label for="comment_app">Optional Comment:</label>
+            <textarea id="comment_app" name="comment" rows="2" style="width: 100%; padding: 5px; margin-top: 5px; box-sizing: border-box;"></textarea>
+
+            <button type="submit" style="background: #2ecc71; margin-top: 15px; width: 100%; padding: 10px; border: none; color: white; border-radius: 5px; cursor: pointer;">Submit & Logout</button>
+            
+            <button type="submit" name="remind_later" value="1" style="background: #e67e22; margin-top: 10px; width: 100%; padding: 10px; border: none; color: white; border-radius: 5px; cursor: pointer;">Remind Me Later</button>
+            
+            <button type="button" onclick="document.getElementById('feedbackModal').style.display='none'" style="background: #ccc; margin-top: 10px; width: 100%; padding: 10px; border: none; color: #333; border-radius: 5px; cursor: pointer;">Close (Continue using app)</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    // Simple script to automatically display the modal if Flask sets show_feedback = true
+    document.addEventListener('DOMContentLoaded', function() {
+        var modal = document.getElementById('feedbackModal');
+        if (modal && modal.getAttribute('style').includes('flex')) {
+            // Modal is visible due to Jinja condition
+        }
+    });
+</script>

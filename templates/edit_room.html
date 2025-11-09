@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Room - {{ room.address }}</title>
+    <style>
+        /* Use styles from addroom.html */
+        body { font-family: Arial, sans-serif; background: #f5f5f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { width: 450px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        form { display: flex; flex-direction: column; }
+        label { margin-top: 10px; font-weight: bold; color: #333; display: block;}
+        input, textarea, select { margin-top: 6px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; box-sizing: border-box;}
+        .checkbox-label { font-weight: normal; margin-top: 5px; display: flex; align-items: center;} 
+        .checkbox-label input { width: auto; margin-right: 10px; }
+        button { margin-top: 20px; padding: 10px; background: #3498db; color: white; border: none; cursor: pointer; border-radius: 5px; font-size: 16px; }
+        button:hover { background: #2980b9; }
+        .current-img { margin-top: 10px; text-align: center; }
+        .current-img img { max-width: 100px; height: auto; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Edit Room Listing</h2>
+        <div class="current-img">
+            {% if room.img_b64 %}
+                <p>Current Image:</p>
+                <img src="data:image/jpeg;base64,{{ room.img_b64 }}" alt="Current Room Image">
+            {% else %}
+                <p>No current image.</p>
+            {% endif %}
+        </div>
+        
+        <form action="{{ url_for('edit_room', room_id=room.id) }}" method="POST" enctype="multipart/form-data">
+            <label for="room_image">Update Image (Optional)</label>
+            <input type="file" name="room_image" id="room_image">
+
+            <label for="address">Address</label>
+            <textarea id="address" name="address" required>{{ room.address }}</textarea>
+
+            <label for="description">Description</label>
+            <textarea id="description" name="description" required>{{ room.description }}</textarea>
+
+            <label for="rent">Rent (₹)</label>
+            <input type="number" id="rent" name="rent" value="{{ room.rent }}" required>
+            
+            <label for="max_people">Max People Capacity (Manual Control)</label>
+            <input type="number" id="max_people" name="max_people" value="{{ room.max_people }}" required min="1">
+            
+            <label for="preferred_gender">Preferred Gender</label>
+            <select name="preferred_gender" id="preferred_gender" required> 
+                <option value="Male" {% if room.preferred_gender == 'Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if room.preferred_gender == 'Female' %}selected{% endif %}>Female</option>
+                <option value="Any" {% if room.preferred_gender == 'Any' %}selected{% endif %}>Any</option>
+            </select>
+
+            <label for="room_type">Room Type</label>
+            <select name="room_type" id="room_type" required>
+                <option value="Single Room" {% if room.room_type == 'Single Room' %}selected{% endif %}>Single Room</option>
+                <option value="1RK" {% if room.room_type == '1RK' %}selected{% endif %}>1RK</option>
+                <option value="1BHK" {% if room.room_type == '1BHK' %}selected{% endif %}>1BHK</option>
+                <option value="2BHK" {% if room.room_type == '2BHK' %}selected{% endif %}>2BHK</option>
+            </select>
+
+            <label for="num_rooms">Number of Rooms</label>
+            <input type="number" id="num_rooms" name="num_rooms" value="{{ room.num_rooms }}" required>
+            
+            <label for="area">Area/City</label>
+            <input type="text" id="area" name="area" value="{{ room.area }}" required>
+
+            <label class="checkbox-label">
+                <input type="checkbox" name="light_bill_included" value="1" {% if room.light_bill_included %}checked{% endif %}> 
+                Light Bill Included
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" name="water_bill_included" value="1" {% if room.water_bill_included %}checked{% endif %}> 
+                Water Bill Included
+            </label>
+            
+            <label class="checkbox-label" style="margin-top: 20px;">
+                <input type="checkbox" name="is_hidden" value="1" {% if room.is_hidden %}checked{% endif %}> 
+                **Hide this listing from Dashboard**
+            </label>
+
+            <button type="submit">Update Room</button>
+            <a href="{{ url_for('my_rooms') }}" style="text-align: center; margin-top: 10px; color: #2c3e50;">Cancel</a>
+        </form>
+    </div>
+</body>
+</html>

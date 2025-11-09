@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Add Room - Room Rental System</title>
+   <style>
+      body { font-family: Arial, sans-serif; background: #f5f5f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
+      .container { width: 450px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+      h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+      form { display: flex; flex-direction: column; }
+      label { margin-top: 10px; font-weight: bold; color: #333; }
+      input, textarea, select { margin-top: 6px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+      .checkbox-label { font-weight: normal; margin-top: 5px; } 
+      button { margin-top: 20px; padding: 10px; background: #2c3e50; color: white; border: none; cursor: pointer; border-radius: 5px; font-size: 16px; }
+      button:hover { background: #f39c12; }
+   </style>
+</head>
+<body>
+
+   <div class="container">
+      <h2>Add Room</h2>
+      <form action="{{ url_for('add_room') }}" method="POST" enctype="multipart/form-data">
+         <label for="room_image">Room Image</label>
+         <input type="file" name="room_image" id="room_image" required>
+
+         <label for="address">Address</label>
+         <textarea id="address" name="address" required></textarea>
+
+         <label for="description">Description</label>
+         <textarea id="description" name="description" required></textarea>
+
+         <label for="rent">Rent (₹)</label>
+         <input type="number" id="rent" name="rent" required>
+
+      <label for="max_people">Max People Capacity</label>
+         <input type="number" id="max_people" name="max_people" min="1" required>
+
+         <label for="preferred_gender">Preferred Gender</label>
+         <select name="preferred_gender" id="preferred_gender" required> 
+            <option value="">-- Select --</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Any">Any</option>
+         </select>
+
+         <label for="room_type">Room Type</label>
+         <select name="room_type" id="room_type" required>
+            <option value="Single Room">Single Room</option>
+            <option value="1RK">1RK</option>
+            <option value="1BHK">1BHK</option>
+            <option value="2BHK">2BHK</option>
+         </select>
+
+         <label for="num_rooms">Number of Rooms</label>
+         <input type="number" id="num_rooms" name="num_rooms" required>
+
+                  <label class="checkbox-label"><input type="checkbox" name="light_bill_included" value="1"> Light Bill Included</label>
+        <label class="checkbox-label"><input type="checkbox" name="water_bill_included" value="1"> Water Bill Included</label>
+
+         <button type="submit">Add Room</button>
+      </form>
+   </div>
+
+</body>
+</html>
