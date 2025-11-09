@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard & Listings (Grid View) - Room Rental System</title>
+  <style>
+    /* BASE & NAV STYLES */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding-bottom: 80px;
+    }
+
+    .navbar {
+      background: #34495e;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .navbar h2 {
+      margin: 0;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      margin-left: 20px;
+      transition: color 0.2s;
+    }
+
+    .navbar a:hover {
+      color: #f39c12;
+    }
+
+    /* LAYOUT & SIDEBAR */
+    .main-layout {
+      display: flex;
+    }
+
+    .filter-sidebar {
+      width: 250px;
+      padding: 20px;
+      background: #fff;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+      min-height: calc(100vh - 70px);
+      position: sticky;
+      top: 0;
+    }
+
+    .filter-sidebar h3 {
+      color: #34495e;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+      margin-top: 0;
+    }
+
+    .filter-sidebar form label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .filter-sidebar form input[type="number"],
+    .filter-sidebar form select,
+    .filter-sidebar form input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+
+    .filter-sidebar button {
+      width: 100%;
+      padding: 10px;
+      background: #2ecc71;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.2s;
+    }
+
+    .filter-sidebar button:hover {
+      background: #27ae60;
+    }
+
+    /* CONTENT & CARD STYLES (Grid View) */
+    .content-area {
+      flex-grow: 1;
+      padding: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 30px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      cursor: pointer;
+      text-decoration: none;
+      color: #333;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .card img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+    }
+
+    .card .info {
+      padding: 15px;
+    }
+
+    .card h3 {
+      margin: 0 0 10px 0;
+      color: #34495e;
+      font-size: 18px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* HIGHLIGHT BAR */
+    .highlight-bar {
+      background: #f8f8f8;
+      border: 1px solid #eee;
+      padding: 10px 15px;
+      margin: -15px -15px 15px -15px;
+      font-size: 14px;
+      color: #555;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .highlight-bar strong {
+      font-size: 16px;
+      color: #e67e22;
+    }
+
+    /* CAPACITY INFO */
+    .capacity-info p {
+      margin: 3px 0;
+      font-size: 14px;
+    }
+
+    .capacity-info .available {
+      font-weight: bold;
+      color: #27ae60;
+    }
+
+    .capacity-info .full {
+      font-weight: bold;
+      color: #c0392b;
+    }
+
+    /* FLOATING BUTTON */
+    .floating-add-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      padding: 15px 25px;
+      background: #e67e22;
+      color: white;
+      border-radius: 50px;
+      text-decoration: none;
+      font-size: 18px;
+      font-weight: bold;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+    }
+
+    .floating-add-btn:hover {
+      background: #d35400;
+    }
+  </style>
+</head>
+
+<body>
+  {% include 'feedback_modal.html' %}
+
+  <div class="navbar">
+    <h2>Welcome, {{ session['username'] }}</h2>
+    <div>
+      {% if session['is_owner'] %}
+          <a href="{{ url_for('owner_requests') }}" style="position: relative; color: #f39c12; margin-right: 30px; font-weight: bold;">
+              Booking Requests
+              {% if pending_requests_count > 0 %}
+                  <span style="position: absolute; top: -10px; right: -15px; background: #e74c3c; color: white; border-radius: 50%; padding: 4px 8px; font-size: 12px; line-height: 1;">
+                      {{ pending_requests_count }}
+                  </span>
+              {% endif %}
+          </a>
+          <a href="{{ url_for('my_rooms') }}">My Listings</a>
+      {% endif %}
+  
+      <a href="{{ url_for('user_profile') }}" title="My Profile" style="font-size: 18px; margin-left: 20px;">
+          Profile </a>
+      <a href="{{ url_for('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a>
+  </div>
+    
+  </div>
+
+  <form id="logout-form" method="POST" action="{{ url_for('logout') }}" style="display: none;"></form>
+
+  <div class="main-layout">
+    <div class="filter-sidebar">
+      <h3>Filter Rooms</h3>
+      <form method="GET" action="{{ url_for('dashboard') }}">
+
+        <label for="area">Area/City Search</label>
+        <input type="text" id="area" name="area" value="{{ request.args.get('area', '') }}"
+          placeholder="e.g., Downtown">
+
+        <label for="max_people">Min. People Capacity</label>
+        <input type="number" id="max_people" name="max_people" value="{{ request.args.get('max_people', '') }}" min="1">
+
+        <label for="room_type">Room Type</label>
+        <select name="room_type" id="room_type">
+          <option value="">All Types</option>
+          <option value="Single Room" {% if request.args.get('room_type')=='Single Room' %}selected{% endif %}>Single
+            Room</option>
+          <option value="1RK" {% if request.args.get('room_type')=='1RK' %}selected{% endif %}>1RK</option>
+          <option value="1BHK" {% if request.args.get('room_type')=='1BHK' %}selected{% endif %}>1BHK</option>
+          <option value="2BHK" {% if request.args.get('room_type')=='2BHK' %}selected{% endif %}>2BHK</option>
+        </select>
+
+        <label for="min_rent">Min Rent (₹)</label>
+        <input type="number" id="min_rent" name="min_rent" value="{{ request.args.get('min_rent', '') }}" min="0">
+
+        <label for="max_rent">Max Rent (₹)</label>
+        <input type="number" id="max_rent" name="max_rent" value="{{ request.args.get('max_rent', '') }}" min="0">
+
+        <label for="gender">Preferred Gender</label>
+        <select name="gender" id="gender">
+          <option value="">Any Gender</option>
+          <option value="Male" {% if request.args.get('gender')=='Male' %}selected{% endif %}>Male</option>
+          <option value="Female" {% if request.args.get('gender')=='Female' %}selected{% endif %}>Female</option>
+          <option value="Any" {% if request.args.get('gender')=='Any' %}selected{% endif %}>Any</option>
+        </select>
+
+        <label for="sort_by">Sort By</label>
+        <select name="sort_by" id="sort_by">
+          <option value="created_at_desc" {% if request.args.get('sort_by', 'created_at_desc' )=='created_at_desc'
+            %}selected{% endif %}>Latest</option>
+          <option value="rent_asc" {% if request.args.get('sort_by')=='rent_asc' %}selected{% endif %}>Price: Low to
+            High</option>
+          <option value="rent_desc" {% if request.args.get('sort_by')=='rent_desc' %}selected{% endif %}>Price: High to
+            Low</option>
+        </select>
+
+        <button type="submit">Apply Filters</button>
+      </form>
+    </div>
+
+    <div class="content-area">
+      {% for room in rooms %}
+      <a class="card" href="{{ url_for('room_detail', room_id=room.id) }}">
+        {% if room.img_b64 %}
+        <img src="data:image/jpeg;base64,{{ room.img_b64 }}" alt="{{ room.address }}">
+        {% else %}
+        <img src="https://via.placeholder.com/300x220?text=No+Image" alt="No Image">
+        {% endif %}
+        <div class="info">
+          <h3>{{ room.address }}</h3>
+
+          <div class="highlight-bar">
+            <strong>{{ room.room_type }} ({{ room.num_rooms }} Rooms)</strong>
+            <div class="capacity-info">
+              <p>Rent: ₹{{ room.rent }}</p>
+            </div>
+          </div>
+
+          <div class="capacity-info">
+            <p>Total Capacity: {{ room.max_people }}</p>
+            <p>Occupied: <span style="color: #e67e22;">{{ room.occupied_people }}</span></p>
+            <p class="{% if room.available_space > 0 %}available{% else %}full{% endif %}">
+              Available Space: {{ room.available_space }}
+            </p>
+          </div>
+
+          <p style="font-size: 14px;"><strong>Gender:</strong> {{ room.preferred_gender }}</p>
+          <p style="font-size: 12px; color: #7f8c8d;">{{ room.description[:80] }}...</p>
+        </div>
+      </a>
+      {% else %}
+      <p style="padding: 20px;">No rooms found matching your criteria.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if session['is_owner'] %}
+  <a href="{{ url_for('add_room') }}" class="floating-add-btn">+ Add Room</a>
+  {% endif %}
+
+</body>
+
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Documents - Booking #{{ booking_id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+    
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+    
+        h2 {
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+    
+        .doc-item {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    
+        .doc-item img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+        }
+    
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #3498db;
+            text-decoration: none;
+        }
+    </style>
+    </head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('owner_requests') }}" class="back-link">← Back to Requests</a>
+        <h2>Verification Documents for Booking #{{ booking_id }}</h2>
+        
+        {% for doc in documents %}
+            <div class="doc-item">
+                <h3>Document Name: {{ doc.name }}</h3>
+                <p>Viewing as Image (Assuming Aadhaar/ID is image format)</p>
+                <img src="data:image/jpeg;base64,{{ doc.b64_data }}" alt="{{ doc.name }}">
+            </div>
+        {% endfor %}
+
+        {% if not documents %}
+            <p>No documents found for this verified booking.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Listings - Owner Portal</title>
+    <style>
+        /* Shared Styles */
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+        }
+    
+        .navbar {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+        }
+    
+        .navbar a:hover {
+            color: #f39c12;
+        }
+    
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 25px;
+        }
+    
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+    
+        /* Listing Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+    
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+    
+        th {
+            background: #ecf0f1;
+            color: #333;
+        }
+    
+        /* Action Buttons Styles */
+            .actions {
+        display: flex; 
+        align-items: center;
+        gap: 5px; 
+        }
+
+        .actions form {
+            margin: 0;
+        }
+
+        .actions button, .actions a { 
+        padding: 5px 10px;
+        border-radius: 5px;
+        }
+    
+        /* Individual Button Styles */
+        .edit {
+            background: #3498db;
+            color: white;
+            border: none;
+        }
+    
+        .delete {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            cursor: pointer;
+            height: 28px;
+        }
+    
+        /* Summary and Tag Styles */
+        .summary {
+            font-weight: bold;
+        }
+    
+        .visibility-tag {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    
+        .visible-tag {
+            background: #dff0d8;
+            color: #3c763d;
+        }
+    
+        .hidden-tag {
+            background: #fcf8e3;
+            color: #8a6d3b;
+        }
+    </style>
+    </head>
+    
+    <body>
+        <div class="navbar">
+            <h2>My Room Listings</h2>
+            <div>
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('owner_requests') }}">Booking Requests</a>
+                <a href="{{ url_for('add_room') }}">Add New Room</a>
+            </div>
+        </div>
+    
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+    
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Image</th>
+                        <th>Address</th>
+                        <th>Rent</th>
+                        <th>Type</th>
+                        <th>Max Capacity</th>
+                        <th>Occupied</th>
+                        <th>Available</th>
+                        <th class="summary">Reviews</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for room in rooms %}
+                    <tr>
+                        <td>{{ room.id }}</td>
+                        <td>
+                            {% if room.img_b64 %}
+                            <img src="data:image/jpeg;base64,{{ room.img_b64 }}"
+                                style="width: 50px; height: 50px; object-fit: cover;">
+                            {% else %}
+                            N/A
+                            {% endif %}
+                    </td>
+                    <td>{{ room.address }}</td>
+                    <td>₹{{ room.rent }}</td>
+                    <td>{{ room.room_type }}</td>
+                    
+                    <td>{{ room.max_people }}</td>
+                    <td style="color: #e67e22;">{{ room.occupied_people }}</td>
+                    <td class="summary" style="color: '{% if room.available_space > 0 %}#27ae60 {% else %} #e74c3c {% endif %}';">
+                        {{ room.available_space }}
+                    </td>
+                    
+                    <td class="summary">{{ room.total_feedback }}</td>
+                    
+                    <td>
+                        {% if room.is_hidden %}
+                            <span class="visibility-tag hidden-tag">Hidden</span>
+                        {% else %}
+                            <span class="visibility-tag visible-tag">Visible</span>
+                        {% endif %}
+                    </td>
+                    
+                    <td class="actions">
+                        <a href="{{ url_for('edit_room', room_id=room.id) }}" class="edit">Edit</a>
+                    
+                        <form method="POST" action="{{ url_for('toggle_visibility', room_id=room.id) }}" style="display:inline;">
+                            <button type="submit" class="approve" style="background: #7f8c8d;">
+                                {% if room.is_hidden %}Show{% else %}Hide{% endif %}
+                            </button>
+                        </form>
+                    
+                        <form method="POST" action="{{ url_for('delete_room', room_id=room.id) }}" style="display:inline;"
+                            onsubmit="return confirm('WARNING: Are you sure you want to delete this listing?');">
+                            <button type="submit" class="delete">Delete</button>
+                        </form>
+                    </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="11">You have not listed any rooms yet.</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+        </table>
+    </div>
+</body>
+</html>
