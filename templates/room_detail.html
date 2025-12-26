@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ room.address }} Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: #2c3e50;
+        }
+
+        p {
+            font-size: 15px;
+            color: #333;
+            margin: 5px 0;
+        }
+
+        .back {
+            display: inline-block;
+            padding: 8px 12px;
+            background: #2c3e50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .back:hover {
+            background: #f39c12;
+        }
+
+        .feedback-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .feedback-list {
+            margin-top: 15px;
+        }
+
+        .review-form-container {
+            background: #fcfcfc; /* Light background */
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        /* CSS for Star Input (Replaces circles) */
+        .star-rating-input {
+            direction: rtl; /* Right-to-left layout for star clicking */
+            display: inline-block;
+            font-size: 30px;
+            margin: 10px 0;
+        }
+        .star-rating-input input[type="radio"] {
+            display: none;
+        }
+        .star-rating-input label {
+            color: #ddd; /* Gray outline for unselected stars */
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 0 2px;
+        }
+        .star-rating-input label:hover,
+        .star-rating-input label:hover ~ label,
+        .star-rating-input input[type="radio"]:checked ~ label {
+            color: #f39c12; /* Theme color for selected/hovered stars */
+        }
+        /* Ensure the button matches the theme */
+        .review-form-container button[type="submit"] {
+            padding: 10px 15px; 
+            background: #3498db; /* Blue Theme Color */
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer;
+        }
+        .review-form-container button[type="submit"]:hover {
+            background: #2980b9; 
+        }
+        
+        
+        /* ------------------------------------------- */
+        /* FANCY FEEDBACK LIST STYLES */
+        /* ------------------------------------------- */
+        .feedback-list-container {
+            padding: 10px;
+        }
+        .feedback-item {
+            background: #ffffff; /* White background */
+            border: 1px solid #cce5ff; /* Light blue border */
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .feedback-item .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .feedback-item .reviewer-name {
+            font-weight: bold;
+            color: #34495e; /* Dark theme color */
+            font-size: 16px;
+        }
+        .feedback-item .star-output {
+            color: #f39c12; /* Star color */
+            font-size: 18px;
+        }
+        .feedback-item .review-comment {
+            font-style: italic;
+            color: #555;
+            margin-top: 5px;
+            border-left: 3px solid #f39c12; /* Theme highlight */
+            padding-left: 10px;
+        }
+        .feedback-item strong {
+            color: #2c3e50;
+        }
+
+        .booking-card { margin-top: 20px; padding: 15px; border: 1px dashed #ccc; border-radius: 8px; }
+        .status-banner { display: flex; align-items: center; padding: 15px; border-radius: 5px; margin-bottom: 10px; }
+        .status-icon { font-size: 24px; margin-right: 15px; }
+        .status-pending { background: #fff9e6; border: 1px solid #f39c12; color: #856404; }
+        .status-approved { background: #eef7ff; border: 1px solid #3498db; color: #2980b9; }
+        .status-verified { background: #f6ffed; border: 1px solid #27ae60; color: #1e7e34; }
+        .btn-verify { display: inline-block; margin-top: 10px; padding: 8px 12px; background: #2980b9; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; }
+
+        .btn-verify:hover {
+            background: #3498db;
+        }
+
+        .room-full-msg {
+            color: #e74c3c;
+            font-weight: bold;
+            text-align: center;
+        }
+        .rating-input {
+            display: flex;
+            gap: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="{{ url_for('dashboard') }}" class="back">← Back to Listings</a>
+
+        {% if img_b64 %}
+        <img src="data:image/jpeg;base64,{{ img_b64 }}" alt="{{ room.address }} Image">
+        {% else %}
+        <img src="https://via.placeholder.com/800x400?text=No+Image+Available" alt="No Image">
+        {% endif %}
+
+        <h2>{{ room.address }}</h2>
+        <p><strong>Average Rating:</strong> {{ room.avg_rating }} / 5</p>
+
+        <p><strong>Rent:</strong> ₹{{ room.rent }}</p>
+        <p><strong>Type:</strong> {{ room.room_type }} (Capacity: {{ room.num_rooms }} beds)</p>
+        <p><strong>Preferred Gender:</strong> {{ room.preferred_gender }}</p>
+        <p><strong>Light Bill Included:</strong> {{ 'Yes' if room.light_bill_included else 'No' }}</p>
+        <p><strong>Water Bill Included:</strong> {{ 'Yes' if room.water_bill_included else 'No' }}</p>
+        <h3>Description</h3>
+        <p>{{ room.description }}</p>
+
+        <div class="owner-contact">
+            <h3>Contact Owner ({{ room.owner_username }})</h3>
+            <p><strong>Mobile:</strong> <a href="tel:{{ room.owner_mobile }}">{{ room.owner_mobile }}</a></p>
+            <p><strong>Email:</strong> <a href="mailto:{{ room.owner_email }}">{{ room.owner_email }}</a></p>
+        </div>
+        {% if not session.get('is_owner') %}
+        <div class="booking-card">
+            
+            {% if user_booking %}
+                {% set status = user_booking.request_status %}
+                
+                <div class="status-banner status-{{ status }}">
+                    {% if status == 'pending' %}
+                        <div class="status-icon">🕒</div>
+                        <div class="status-text">
+                            <strong>Request Pending</strong>
+                            <p>You have requested {{ user_booking.num_people_booking }} spot(s). Waiting for owner approval.</p>
+                        </div>
+
+                    {% elif status == 'approved' %}
+                        <div class="status-icon">🎉</div>
+                        <div class="status-text">
+                            <strong>Accepted! Action Required</strong>
+                            <p>The owner approved your request. Please upload documents for {{ user_booking.num_people_booking }} person(s) to finalize.</p>
+                            <a href="{{ url_for('verify_booking', booking_id=user_booking.id) }}" class="btn-verify">
+                                Upload Documents & Verify
+                            </a>
+                        </div>
+
+                    {% elif status == 'verified' %}
+                        <div class="status-icon">✅</div>
+                        <div class="status-text">
+                            <strong>Booking Confirmed</strong>
+                            <p>Your spot is secured and verified. You can now move in!</p>
+                        </div>
+
+                    {% elif status == 'rejected' %}
+                        <div class="status-icon">❌</div>
+                        <div class="status-text">
+                            <strong>Request Rejected</strong>
+                            <p>The owner declined your request. You may try again if space permits.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {% if not user_booking or user_booking.request_status == 'rejected' %}
+                {% if room.available_space > 0 %}
+                    <form action="{{ url_for('book_room', room_id=room.id) }}" method="POST" style="margin-top: 15px;">
+                        <h3 style="margin-top: 0; font-size: 18px;">Book Spot(s) in this Room</h3>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label>People (Max: {{ room.available_space }}):</label>
+                            <input type="number" name="num_people" value="1" min="1" max="{{ room.available_space }}" style="padding: 8px; width: 60px; border-radius: 4px; border: 1px solid #ccc;">
+                            <button type="submit" style="padding: 10px 15px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                Send Booking Request
+                            </button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="room-full-msg" style="margin-top: 15px;">
+                        ⚠️ Room Full: No new requests can be accepted at this time.
+                    </div>
+                {% endif %}
+            {% endif %}
+
+        </div>
+        {% endif %}
+        {% if not session.get('is_owner') %}
+
+        <div style="margin-top: 20px; padding: 15px; border: 1px dashed #ccc; border-radius: 5px;">
+
+            {% set can_send_new_request = True %}
+
+            {% if user_booking %}
+            {% set status = user_booking.request_status %}
+            {% set booking_id = user_booking.id %}
+            {% set can_send_new_request = False %}
+
+            {% if status == 'pending' %}
+            <p style="font-weight: bold; color: #f39c12; margin: 5px 0;">🔴 REQUEST PENDING: You have a pending request
+                for {{ user_booking.num_people_booking }} person(s).</p>
+            <p style="font-size: 14px;">The owner is yet to approve or reject your request.</p>
+
+            {% elif status == 'approved' %}
+            <p style="font-weight: bold; color: #2980b9; margin: 5px 0;">✅ REQUEST APPROVED! Finalize Verification.</p>
+            <p style="font-size: 14px;">The owner has accepted your request. Upload your documents now to confirm your
+                spot!</p>
+            <a href="{{ url_for('verify_booking', booking_id=booking_id) }}"
+                style="padding: 10px 15px; background: #2980b9; color: white; border-radius: 5px; text-decoration: none; display: inline-block; margin-top: 10px;">Upload
+                Documents & Verify</a>
+
+            {% elif status == 'verified' %}
+            <p style="font-weight: bold; color: #27ae60; margin: 5px 0;">🎉 BOOKING CONFIRMED! (Verified)</p>
+            <p style="font-size: 14px;">Your spot is secured. Details confirmed for: {{ user_booking.user_name }}.</p>
+
+            {% elif status == 'rejected' %}
+            <p style="font-weight: bold; color: #e74c3c; margin: 5px 0;">❌ REQUEST REJECTED ({{
+                user_booking.booked_at.strftime('%Y-%m-%d') }}).</p>
+            <p style="font-size: 14px;">You may send a new request if space is available.</p>
+            {% set can_send_new_request = True %}
+
+            {% endif %}
+            {% endif %}
+
+            <!-- {% if can_send_new_request %} -->
+            <!-- {% if room.available_space > 0 %}
+            <form action="{{ url_for('book_room', room_id=room.id) }}" method="POST"
+                style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #eee;">
+                <p style="font-weight: bold;">Book Spot(s) in this Room ({{ room.available_space }} available):</p>
+                <label for="num_people">Booking for</label>
+                <input type="number" name="num_people" value="1" min="1" max="{{ room.available_space }}"
+                    style="padding: 8px; width: 100px;">
+                <button type="submit"
+                    style="padding: 10px 15px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">Send
+                    Booking Request</button>
+            </form>
+            {% else %}
+            <p style="color: #e74c3c; font-weight: bold; margin-top: 15px;">This room is currently full. No new requests
+                can be sent.</p>
+            {% endif %}
+            {% endif %} -->
+
+        </div>
+        {% endif %}
+        <div class="feedback-section">
+            <h3>Room Reviews</h3>
+        
+            {% if not session['is_owner'] %}
+            <div class="review-form-container">
+                <h4>Submit Your Review</h4>
+                <form action="{{ url_for('submit_room_feedback', room_id=room.id) }}" method="POST" class="review-form">
+                    <h4>Rate your stay (1: Poor, 5: Excellent)</h4>
+                    
+                    {% set questions = [
+                        'Cleanliness of the room',
+                        'Accuracy of the description/photos',
+                        'Amenities (Wi-Fi, Electricity, Water)',
+                        'Location safety and convenience',
+                        'Value for money (Rent vs Quality)',
+                        'Owner responsiveness and behavior',
+                        'Peacefulness/Noise levels',
+                        'Natural light and air ventilation',
+                        'Maintenance and repair handling',
+                        'Overall satisfaction with the stay'
+                    ] %}
+                
+                    <div class="rating-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        {% for q_text in questions %}
+                        <div class="q-item">
+                            <label style="font-size: 14px; display: block; margin-bottom: 5px;">{{ loop.index }}. {{ q_text }}</label>
+                            <select name="q{{ loop.index }}" required style="width: 100%; padding: 5px;">
+                                <option value="">-- Rate --</option>
+                                <option value="5">5 - Excellent</option>
+                                <option value="4">4 - Good</option>
+                                <option value="3">3 - Average</option>
+                                <option value="2">2 - Poor</option>
+                                <option value="1">1 - Very Dissatisfied</option>
+                            </select>
+                        </div>
+                        {% endfor %}
+                    </div>
+                
+                    <label for="comment">Additional Comments:</label>
+                    <textarea name="comment" rows="3" style="width: 100%; border: 1px solid #ccc; border-radius: 4px; padding: 10px;"></textarea>
+                    
+                    <button type="submit" class="btn-primary" style="margin-top: 15px; width: 100%; padding: 12px;">Submit Comprehensive Review</button>
+                </form>
+            </div>
+            {% endif %}
+        
+            <hr style="margin: 30px 0;">
+            <h4>All Feedback ({{ feedbacks|length }})</h4>
+            
+            <div class="feedback-list-container">
+                {% for feedback in feedbacks %}
+                <div class="feedback-item">
+                    <div class="review-header">
+                        <span class="reviewer-name">{{ feedback.username }}</span>
+                        <span class="star-output">
+                            {% for i in range(feedback.rating) %}★{% endfor %}
+                            {% for i in range(5 - feedback.rating) %}☆{% endfor %}
+                        </span>
+                    </div>
+                    <p class="review-comment">"{{ feedback.comment }}"</p>
+                </div>
+                {% else %}
+                <p>No reviews yet. Be the first!</p>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</body>
+
+</html>
