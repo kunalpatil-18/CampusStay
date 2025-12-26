@@ -63,13 +63,85 @@
             margin-top: 15px;
         }
 
-        .feedback-item {
-            background: #ecf0f1;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 10px;
+        .review-form-container {
+            background: #fcfcfc; /* Light background */
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-
+        
+        /* CSS for Star Input (Replaces circles) */
+        .star-rating-input {
+            direction: rtl; /* Right-to-left layout for star clicking */
+            display: inline-block;
+            font-size: 30px;
+            margin: 10px 0;
+        }
+        .star-rating-input input[type="radio"] {
+            display: none;
+        }
+        .star-rating-input label {
+            color: #ddd; /* Gray outline for unselected stars */
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 0 2px;
+        }
+        .star-rating-input label:hover,
+        .star-rating-input label:hover ~ label,
+        .star-rating-input input[type="radio"]:checked ~ label {
+            color: #f39c12; /* Theme color for selected/hovered stars */
+        }
+        /* Ensure the button matches the theme */
+        .review-form-container button[type="submit"] {
+            padding: 10px 15px; 
+            background: #3498db; /* Blue Theme Color */
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer;
+        }
+        .review-form-container button[type="submit"]:hover {
+            background: #2980b9; 
+        }
+        
+        
+        /* ------------------------------------------- */
+        /* FANCY FEEDBACK LIST STYLES */
+        /* ------------------------------------------- */
+        .feedback-list-container {
+            padding: 10px;
+        }
+        .feedback-item {
+            background: #ffffff; /* White background */
+            border: 1px solid #cce5ff; /* Light blue border */
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .feedback-item .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .feedback-item .reviewer-name {
+            font-weight: bold;
+            color: #34495e; /* Dark theme color */
+            font-size: 16px;
+        }
+        .feedback-item .star-output {
+            color: #f39c12; /* Star color */
+            font-size: 18px;
+        }
+        .feedback-item .review-comment {
+            font-style: italic;
+            color: #555;
+            margin-top: 5px;
+            border-left: 3px solid #f39c12; /* Theme highlight */
+            padding-left: 10px;
+        }
         .feedback-item strong {
             color: #2c3e50;
         }
@@ -200,8 +272,8 @@
             {% endif %}
             {% endif %}
 
-            {% if can_send_new_request %}
-            {% if room.available_space > 0 %}
+            <!-- {% if can_send_new_request %} -->
+            <!-- {% if room.available_space > 0 %}
             <form action="{{ url_for('book_room', room_id=room.id) }}" method="POST"
                 style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #eee;">
                 <p style="font-weight: bold;">Book Spot(s) in this Room ({{ room.available_space }} available):</p>
@@ -216,35 +288,70 @@
             <p style="color: #e74c3c; font-weight: bold; margin-top: 15px;">This room is currently full. No new requests
                 can be sent.</p>
             {% endif %}
-            {% endif %}
+            {% endif %} -->
 
         </div>
         {% endif %}
         <div class="feedback-section">
             <h3>Room Reviews</h3>
-
+        
             {% if not session['is_owner'] %}
-            <form action="{{ url_for('submit_room_feedback', room_id=room.id) }}" method="POST">
+            <div class="review-form-container">
                 <h4>Submit Your Review</h4>
-                <label>Rating (1-5):</label>
-                <div class="rating-input">
-                    {% for i in range(1, 6) %}
-                    <label><input type="radio" name="rating" value="{{ i }}" required> {{ i }}</label>
-                    {% endfor %}
-                </div>
-                <label for="comment">Comment:</label>
-                <textarea id="comment" name="comment" rows="3" style="width: 100%; margin-top: 5px;"></textarea>
-                <button type="submit" style="margin-top: 10px;">Submit Feedback</button>
-            </form>
+                <form action="{{ url_for('submit_room_feedback', room_id=room.id) }}" method="POST" class="review-form">
+                    <h4>Rate your stay (1: Poor, 5: Excellent)</h4>
+                    
+                    {% set questions = [
+                        'Cleanliness of the room',
+                        'Accuracy of the description/photos',
+                        'Amenities (Wi-Fi, Electricity, Water)',
+                        'Location safety and convenience',
+                        'Value for money (Rent vs Quality)',
+                        'Owner responsiveness and behavior',
+                        'Peacefulness/Noise levels',
+                        'Natural light and air ventilation',
+                        'Maintenance and repair handling',
+                        'Overall satisfaction with the stay'
+                    ] %}
+                
+                    <div class="rating-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        {% for q_text in questions %}
+                        <div class="q-item">
+                            <label style="font-size: 14px; display: block; margin-bottom: 5px;">{{ loop.index }}. {{ q_text }}</label>
+                            <select name="q{{ loop.index }}" required style="width: 100%; padding: 5px;">
+                                <option value="">-- Rate --</option>
+                                <option value="5">5 - Excellent</option>
+                                <option value="4">4 - Good</option>
+                                <option value="3">3 - Average</option>
+                                <option value="2">2 - Poor</option>
+                                <option value="1">1 - Very Dissatisfied</option>
+                            </select>
+                        </div>
+                        {% endfor %}
+                    </div>
+                
+                    <label for="comment">Additional Comments:</label>
+                    <textarea name="comment" rows="3" style="width: 100%; border: 1px solid #ccc; border-radius: 4px; padding: 10px;"></textarea>
+                    
+                    <button type="submit" class="btn-primary" style="margin-top: 15px; width: 100%; padding: 12px;">Submit Comprehensive Review</button>
+                </form>
+            </div>
             {% endif %}
-
-            <hr>
+        
+            <hr style="margin: 30px 0;">
             <h4>All Feedback ({{ feedbacks|length }})</h4>
-            <div class="feedback-list">
+            
+            <div class="feedback-list-container">
                 {% for feedback in feedbacks %}
                 <div class="feedback-item">
-                    <strong>{{ feedback.username }}</strong> rated it {{ feedback.rating }}/5:
-                    <p>"{{ feedback.comment }}"</p>
+                    <div class="review-header">
+                        <span class="reviewer-name">{{ feedback.username }}</span>
+                        <span class="star-output">
+                            {% for i in range(feedback.rating) %}★{% endfor %}
+                            {% for i in range(5 - feedback.rating) %}☆{% endfor %}
+                        </span>
+                    </div>
+                    <p class="review-comment">"{{ feedback.comment }}"</p>
                 </div>
                 {% else %}
                 <p>No reviews yet. Be the first!</p>
