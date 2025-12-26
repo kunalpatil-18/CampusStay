@@ -1,7 +1,7 @@
-# app.py - Fully Updated
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_mysqldb import MySQL
 from werkzeug.security import generate_password_hash, check_password_hash
+import os
 import MySQLdb.cursors
 import base64
 import datetime 
@@ -11,7 +11,6 @@ from flask import send_file
 app = Flask(__name__)
 app.secret_key = 'replace_with_a_strong_secret'
 
-# ---------- MySQL Config (edit to your settings) ----------
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_PORT'] = 1405
 app.config['MYSQL_USER'] = 'root'
@@ -19,86 +18,68 @@ app.config['MYSQL_PASSWORD'] = 'Utkarsh@05'
 app.config['MYSQL_DB'] = 'utkarsh'
 mysql = MySQL(app)
 
-# ---------- Admin credentials (change) ----------
 ADMIN_USERNAME = 'admin'
-ADMIN_PASSWORD = 'adminpass'  # change before production!
+ADMIN_PASSWORD = 'adminpass'  
 
 def format_seconds(seconds):
     if seconds is None:
         seconds = 0
     return str(datetime.timedelta(seconds=int(seconds)))
-# Utility functions (Unchanged)
 def fetchall_dict(cursor):
     cols = [d[0] for d in cursor.description]
     return [dict(zip(cols, row)) for row in cursor.fetchall()]
 
-# app.py (Near the utility functions)
 
-# Utility function to track user activity
 def track_user_activity(user_id):
     if user_id:
-        # NOTE: Using 'user_id' in a standard curso r.execute statement
-        # to ensure the update happens correctly.
         cursor = None
         try:
-            # Get a new cursor (necessary for pre-request hooks)
             cursor = mysql.connection.cursor() 
-            
-            # Use UTC_TIMESTAMP() which is often more reliable than NOW()
+
             cursor.execute("UPDATE users SET last_seen = UTC_TIMESTAMP() WHERE id = %s", (user_id,))
-            
-            # CRITICAL: Commit the change immediately
+
             mysql.connection.commit()
-            
+
         except Exception as e:
-            # Log error (if debugging is on)
             print(f"Error updating last_seen for user {user_id}: {e}")
-            
-            # Optional: Attempt rollback if commit failed
+
             try:
                 mysql.connection.rollback()
             except Exception:
                 pass 
-                
+
         finally:
-            # Ensure the cursor is closed regardless of success/failure
             if cursor:
                 cursor.close()
 
-# Apply the tracker before every request (This part remains the same)
 @app.before_request
 def before_request():
     global session_start_time
     session_start_time = {}
     user_id = session.get('user_id')
     if user_id:
-        # Record request start time if not already recorded for this session
         if user_id not in session_start_time:
             session_start_time[user_id] = time.time()
-        
-        # Track activity (as before)
+
         track_user_activity(user_id)
 
 @app.route('/init_db')
 def init_db():
     return "DB initialization route is disabled. Please ensure your database tables match the provided SQL queries."
 
-# app.py (Add this new section near the 'Auth routes')
 @app.route('/')
 def index():
     if session.get('loggedin'):
         return redirect(url_for('dashboard'))
     return render_template('landing.html')
-
 @app.route('/profile')
 def user_profile():
     if not session.get('loggedin'):
         return redirect(url_for('login'))
-    
+
     user_id = session.get('user_id')
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    
-    # Fetch all user details, including sensitive columns for editing
+
     cursor.execute("SELECT id, name, username, email, mobile, city, owner, gender FROM users WHERE id = %s", (user_id,))
     user = cursor.fetchone()
     cursor.close()
@@ -107,62 +88,52 @@ def user_profile():
         flash('User profile not found.', 'danger')
         session.clear()
         return redirect(url_for('login'))
-        
+
     return render_template('profile.html', user=user)
 
-# app.py (Add this function)
 
 @app.route('/update_profile', methods=['POST'])
 def update_profile():
     if not session.get('loggedin'):
         return redirect(url_for('login'))
-        
+
     user_id = session.get('user_id')
     name = request.form.get('name')
     email = request.form.get('email')
     mobile = request.form.get('mobile')
     city = request.form.get('city')
-    
-    # Optional: Basic validation here (e.g., check if email/mobile is taken by another user)
-    
+
+
     cursor = mysql.connection.cursor()
     cursor.execute("""
         UPDATE users 
         SET name=%s, email=%s, mobile=%s, city=%s 
         WHERE id=%s
     """, (name, email, mobile, city, user_id))
-    
+
     mysql.connection.commit()
     cursor.close()
     flash('Profile updated successfully!', 'success')
     return redirect(url_for('user_profile'))
 
-# app.py (Add this function)
 
 @app.route('/delete_profile', methods=['POST'])
 def delete_profile():
     if not session.get('loggedin'):
         return redirect(url_for('login'))
-        
+
     user_id = session.get('user_id')
-    
-    # For security, we could prompt for password re-verification here, 
-    # but based on your request, we proceed with deletion after the client-side confirmation.
-    
+
+
     cursor = mysql.connection.cursor()
-    # Deleting the user automatically deletes all linked data (rooms, bookings, feedback) 
-    # IF your Foreign Keys have ON DELETE CASCADE set (which they should).
+
     cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
     mysql.connection.commit()
     cursor.close()
-    
-    # Clear session and redirect to login
+
     session.clear()
     flash('Your account and all associated data have been permanently deleted.', 'info')
     return redirect(url_for('login'))
-# ------------------------------
-# ---------- AUTH ROUTES ----------
-# ------------------------------
 @app.route('/register', methods=['GET','POST'])
 def register():
     if request.method == 'POST':
@@ -184,7 +155,7 @@ def register():
             return render_template('register.html')
         hashed = generate_password_hash(password)
         cursor.execute("INSERT INTO users (name, username, email, mobile, city, password, owner, gender) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
-                       (name, username, email, mobile, city, hashed, is_owner, gender))
+               (name, username, email, mobile, city, password, is_owner, gender))
         mysql.connection.commit()
         cursor.close()
         flash('Registration successful. Please login.', 'success')
@@ -200,7 +171,7 @@ def login():
         cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
         user = cursor.fetchone()
         cursor.close()
-        if user and check_password_hash(user['password'], password):
+        if user and user['password'] == password:
             session.clear()
             session['loggedin'] = True
             session['user_id'] = user['id']
@@ -218,20 +189,17 @@ def logout():
     session_start_time = {}
     user_id = session.get('user_id')
     remind_later = request.form.get('remind_later')
-    
+
     last_session_duration = 0
     if user_id and user_id in session_start_time:
-        # Calculate time spent in seconds
         last_session_duration = int(time.time() - session_start_time[user_id])
-        
+
         cursor = mysql.connection.cursor()
-        # Update total time spent by adding the duration of this session
         cursor.execute("UPDATE users SET total_time_spent = total_time_spent + %s WHERE id = %s", 
                        (last_session_duration, user_id))
         mysql.connection.commit()
         cursor.close()
-        
-        # Remove user from tracking dict
+
         del session_start_time[user_id]
 
     if user_id:
@@ -253,16 +221,12 @@ def logout():
     return redirect(url_for('login'))
 
 
-# ---------------------------------------------
-# ---------- DASHBOARD & ROOM LISTING (Filters & Capacity) ----------
-# ---------------------------------------------
 @app.route('/')
 @app.route('/dashboard')
 def dashboard():
     if not session.get('loggedin'):
         return redirect(url_for('login'))
 
-    # Read filter parameters (unchanged)
     q_area = request.args.get('area', '')
     q_gender = request.args.get('gender', '')
     q_room_type = request.args.get('room_type', '')
@@ -270,30 +234,25 @@ def dashboard():
     q_min_rent = request.args.get('min_rent', '')
     q_max_rent = request.args.get('max_rent', '')
     sort_by = request.args.get('sort_by', 'created_at_desc')
-    
-    # Initialize variables to avoid NameError if blocks are skipped
+
     pending_requests_count = 0 
-    
-    # CRITICAL: Create cursor ONCE at the start
+
     cursor = mysql.connection.cursor() 
 
-    # -----------------------------------------------------------------------
-    # 1. BUILD & EXECUTE MAIN ROOMS QUERY
-    # -----------------------------------------------------------------------
     sql = """
         SELECT r.id, r.room_image, r.address, r.description, r.rent, r.room_type, r.num_rooms, 
                r.preferred_gender, r.water_bill_included, r.light_bill_included, u.username AS owner_username, 
                r.max_people,
-               IFNULL(SUM(b.num_people_booking), 0) AS occupied_people 
+               IFNULL(SUM(b.num_people_booking), 0) AS occupied_people,
+               -- FIX: Add subquery to calculate AVG(rating) for the room
+               (SELECT AVG(rating) FROM feedback WHERE room_id = r.id) AS avg_rating 
         FROM rooms r 
         LEFT JOIN users u ON r.owner_id = u.id 
-        -- FIX: Only count people from 'verified' bookings
-        LEFT JOIN bookings b ON r.id = b.room_id AND b.request_status IN ('verified') 
+        LEFT JOIN bookings b ON r.id = b.room_id AND b.request_status IN ('verified')
         WHERE 1=1
     """
     params = []
     sql += " AND r.is_hidden = 0"
-    # ... (Filter building logic: append AND clauses to sql and values to params) ...
     if q_area:
         sql += " AND r.address LIKE %s" 
         params.append(f"%{q_area}%")
@@ -312,10 +271,9 @@ def dashboard():
     if q_max_rent:
         sql += " AND r.rent <= %s"
         params.append(q_max_rent)
-    
-    sql += " GROUP BY r.id" # Group by room ID for the SUM() aggregate
-    
-    # Sorting
+
+    sql += " GROUP BY r.id"    
+
     if sort_by == 'rent_asc':
         sql += " ORDER BY r.rent ASC"
     elif sort_by == 'rent_desc':
@@ -323,11 +281,9 @@ def dashboard():
     else:
         sql += " ORDER BY r.created_at DESC"
 
-    # EXECUTE FIRST QUERY and define 'rows'
     cursor.execute(sql, tuple(params))
     rows = cursor.fetchall() 
 
-    # Build the rooms list (requires 'rows' to be defined)
     rooms = []
     for row in rows:
         img_b64 = None
@@ -336,9 +292,10 @@ def dashboard():
                 img_b64 = base64.b64encode(row[1]).decode('utf-8')
             except Exception:
                 img_b64 = None
-                
+
         max_capacity = row[11]
         occupied_people = row[12]
+        avg_rating = row[13]
 
         rooms.append({
             'id': row[0],
@@ -354,32 +311,24 @@ def dashboard():
             'owner_username': row[10],
             'max_people': max_capacity,
             'occupied_people': occupied_people,
-            'available_space': max_capacity - occupied_people
+            'available_space': max_capacity - occupied_people,
+            'avg_rating': avg_rating 
         })
-    
-    # -----------------------------------------------------------------------
-    # 2. FETCH PENDING REQUEST COUNT (CONDITIONAL)
-    # -----------------------------------------------------------------------
+
     if session.get('is_owner'):
-        # Execute second query using the SAME open cursor
         cursor.execute("""
             SELECT COUNT(b.id) AS pending_count
             FROM bookings b
             JOIN rooms r ON b.room_id = r.id
             WHERE r.owner_id = %s AND b.request_status = 'pending'
         """, (session.get('user_id'),))
-        
-        # Note: Must fetch the result of the second query!
+
         result = cursor.fetchone() 
         if result:
             pending_requests_count = result[0]
-            
-    # -----------------------------------------------------------------------
-    # 3. FINAL CLEANUP
-    # -----------------------------------------------------------------------
-    cursor.close() # CRITICAL: Close cursor only AFTER all fetches are complete
-    
-    # Feedback reminder logic (using DictCursor is better here, but let's stick to simple tuple for now)
+
+    cursor.close()    
+
     show_feedback = False
     cur_dict = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur_dict.execute("SELECT feedback FROM users WHERE id = %s", (session.get('user_id'),))
@@ -393,21 +342,17 @@ def dashboard():
                            rooms=rooms, 
                            show_feedback=show_feedback,
                            pending_requests_count=pending_requests_count)
-# ---------- ROOM CRUD (Owner Management) ----------
-# ----------------------------------------
 
-# app.py (Add new owner action routes)
 
 @app.route('/toggle_visibility/<int:room_id>', methods=['POST'])
 def toggle_visibility(room_id):
     if not session.get('loggedin') or not session.get('is_owner'):
         flash('Access denied', 'danger')
         return redirect(url_for('dashboard'))
-    
+
     owner_id = session.get('user_id')
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # 1. Check current status and verify ownership
     cursor.execute("SELECT is_hidden FROM rooms WHERE id = %s AND owner_id = %s", (room_id, owner_id))
     room = cursor.fetchone()
 
@@ -416,10 +361,9 @@ def toggle_visibility(room_id):
         cursor.close()
         return redirect(url_for('my_rooms'))
 
-    new_status = 1 if room['is_hidden'] == 0 else 0 # Toggle
+    new_status = 1 if room['is_hidden'] == 0 else 0    
     status_text = "HIDDEN" if new_status == 1 else "VISIBLE"
 
-    # 2. Update the status
     cursor.execute("UPDATE rooms SET is_hidden = %s WHERE id = %s", (new_status, room_id))
     mysql.connection.commit()
     cursor.close()
@@ -467,7 +411,6 @@ def view_documents(booking_id):
     owner_id = session.get('user_id')
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # 1. Verify that the booking is verified and belongs to a room owned by this user
     cursor.execute("""
         SELECT d.document_file, d.document_name
         FROM booking_documents d
@@ -477,7 +420,7 @@ def view_documents(booking_id):
         AND r.owner_id = %s 
         AND b.request_status = 'verified'
     """, (booking_id, owner_id))
-    
+
     documents = cursor.fetchall()
     cursor.close()
 
@@ -485,32 +428,21 @@ def view_documents(booking_id):
         flash('No verified documents found for this booking, or access denied.', 'danger')
         return redirect(url_for('owner_requests'))
 
-    # Handling Multiple Files (Option: Zip and send, or render a simple listing page)
-    # Since zipping is complex, we'll create a simple HTML listing that forces download/view.
-    
+
     doc_html = f"<h2>Documents for Booking #{booking_id}</h2>"
     doc_html += "<p>Click to download or view the document in your browser.</p>"
     doc_html += "<table border='1' cellpadding='10'><tr><th>Name</th><th>Action</th></tr>"
 
-    # For simplicity and security, we'll create a helper route that serves one document at a time.
-    # We must first fetch ALL documents for the booking and render a list of download links.
-    # NOTE: To implement the direct viewing of files, we need a slight adjustment:
 
     all_links = []
-    
+
     for i, doc in enumerate(documents):
-        # We need a dedicated route to fetch a single file by document_id
-        # Let's assume you update the query to select d.id as document_id
-        # Since we don't have document_id in the current query, we'll return a static file listing.
-        
-        # A simpler approach: Render the documents inline. This is easier than zipping.
+
         doc_html += f"<tr><td>{doc['document_name']}</td><td><img src='data:image/jpeg;base64,{base64.b64encode(doc['document_file']).decode('utf-8')}' style='max-width: 200px; height: auto;'></td></tr>"
 
 
     doc_html += "</table>"
-    
-    # Since displaying images inline from BLOB is easiest:
-    # We need to re-query to fetch the actual BLOB data for inline display:
+
 
     documents_b64 = []
     for doc in documents:
@@ -531,23 +463,21 @@ def my_rooms():
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute("""
         SELECT r.id, r.room_image, r.address, r.rent, r.room_type, r.num_rooms, r.max_people, r.is_hidden,
-               IFNULL(SUM(b.num_people_booking), 0) AS occupied_people, -- <<< ADDED
+               IFNULL(SUM(b.num_people_booking), 0) AS occupied_people, 
                (SELECT COUNT(id) FROM feedback WHERE room_id = r.id) AS total_feedback,
                (SELECT AVG(rating) FROM feedback WHERE room_id = r.id) AS avg_rating
         FROM rooms r 
         LEFT JOIN bookings b ON r.id = b.room_id AND b.request_status IN ('verified')
         WHERE r.owner_id = %s 
-        GROUP BY r.id -- <<< CRITICAL: Added GROUP BY
+        GROUP BY r.id 
         ORDER BY r.created_at DESC""", (owner_id,))
     rooms = cursor.fetchall()
     cursor.close()
 
     for room in rooms:
-        # Prepare image for display
         room['img_b64'] = base64.b64encode(room['room_image']).decode('utf-8') if room['room_image'] else None
         room['avg_rating'] = f"{room['avg_rating']:.1f}" if room['avg_rating'] is not None else 'N/A'
-        
-        # CRITICAL FIX: Calculate available space
+
         room['available_space'] = room['max_people'] - room['occupied_people']
 
     return render_template('my_rooms.html', rooms=rooms)
@@ -589,7 +519,7 @@ def edit_room(room_id):
         """
         params_update = [address, description, rent, light_bill_included, water_bill_included, 
                          room_type, num_rooms, preferred_gender, area, max_people, room_id, owner_id]
-        
+
         if img:
             sql_update = sql_update.replace('SET', 'SET room_image=%s,', 1)
             params_update.insert(0, img)
@@ -599,7 +529,7 @@ def edit_room(room_id):
         cursor.close()
         flash('Room updated successfully!', 'success')
         return redirect(url_for('my_rooms'))
-    
+
     room['img_b64'] = base64.b64encode(room['room_image']).decode('utf-8') if room['room_image'] else None
     cursor.close()
     return render_template('edit_room.html', room=room)
@@ -609,10 +539,9 @@ def delete_room(room_id):
     if not session.get('loggedin') or not session.get('is_owner'):
         flash('Access denied', 'danger')
         return redirect(url_for('dashboard'))
-    
+
     owner_id = session.get('user_id')
     cursor = mysql.connection.cursor()
-    # Deleting the room listing. Foreign key constraints handle feedback and bookings deletion.
     cursor.execute("DELETE FROM rooms WHERE id = %s AND owner_id = %s", (room_id, owner_id))
     mysql.connection.commit()
     cursor.close()
@@ -620,23 +549,18 @@ def delete_room(room_id):
     return redirect(url_for('my_rooms'))
 
 
-# ------------------------------------------------
-# ---------- BOOKING & FEEDBACK ROUTES ----------
-# ------------------------------------------------
-# app.py (Replace the existing book_room function)
 
 @app.route('/book_room/<int:room_id>', methods=['POST'])
 def book_room(room_id):
     if not session.get('loggedin') or session.get('is_owner'):
         flash('Only registered students can send a booking request.', 'danger')
         return redirect(url_for('room_detail', room_id=room_id))
-    
+
     user_id = session.get('user_id')
     num_people = int(request.form.get('num_people', 1)) 
-    
+
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    
-    # 1. Check if the room has capacity (Capacity check remains the same)
+
     cursor.execute("""
         SELECT r.max_people, IFNULL(SUM(b.num_people_booking), 0) AS occupied
         FROM rooms r
@@ -658,22 +582,20 @@ def book_room(room_id):
         cursor.close()
         return redirect(url_for('room_detail', room_id=room_id))
 
-    # 2. Check if the user already has a PENDING or APPROVED request for this room
     cursor.execute("SELECT id FROM bookings WHERE user_id = %s AND room_id = %s AND request_status IN ('pending', 'approved')", (user_id, room_id))
     if cursor.fetchone():
         flash('You already have a pending or approved request for this room.', 'info')
         cursor.close()
         return redirect(url_for('room_detail', room_id=room_id))
 
-    # 3. Create the booking request (status='pending')
     cursor.execute("""
         INSERT INTO bookings (room_id, user_id, num_people_booking, request_status)
         VALUES (%s, %s, %s, 'pending')
     """, (room_id, user_id, num_people))
-    
+
     mysql.connection.commit()
     cursor.close()
-    
+
     flash(f'Booking request sent to the owner for {num_people} person(s). Awaiting owner approval.', 'success')
     return redirect(url_for('room_detail', room_id=room_id))
 
@@ -683,12 +605,11 @@ def room_detail(room_id):
     if not session.get('loggedin'):
         flash('Please log in to view room details.', 'warning')
         return redirect(url_for('login'))
-    
+
     user_id = session.get('user_id')
 
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    
-    # Fetch room details AND current capacity
+
     cursor.execute("""
         SELECT r.*, u.username as owner_username, u.mobile as owner_mobile, u.email as owner_email,
                IFNULL(SUM(b.num_people_booking), 0) AS occupied_people
@@ -705,10 +626,9 @@ def room_detail(room_id):
         flash('Room not found', 'danger')
         cursor.close()
         return redirect(url_for('dashboard'))
-    
-    # Calculate available space
+
     room['available_space'] = room['max_people'] - room['occupied_people']
-    
+
     user_booking = None
     if not session.get('is_owner'):
         user_id = session.get('user_id')
@@ -719,7 +639,6 @@ def room_detail(room_id):
             ORDER BY booked_at DESC LIMIT 1
         """, (user_id, room_id))
     user_booking = cursor.fetchone()
-    # Fetch room-specific feedback and average rating
     cursor.execute("""
         SELECT f.rating, f.comment, u.username 
         FROM feedback f 
@@ -731,11 +650,11 @@ def room_detail(room_id):
     cursor.execute("SELECT AVG(rating) as avg_rating FROM feedback WHERE room_id = %s", (room_id,))
     avg_rating = cursor.fetchone()['avg_rating']
     cursor.close()
-    
+
     img_b64 = base64.b64encode(room['room_image']).decode('utf-8') if room['room_image'] else None
-    
+
     room['avg_rating'] = f"{avg_rating:.1f}" if avg_rating is not None else 'N/A'
-    
+
     return render_template('room_detail.html', 
                            room=room, 
                            img_b64=img_b64, 
@@ -744,37 +663,45 @@ def room_detail(room_id):
 
 @app.route('/submit_room_feedback/<int:room_id>', methods=['POST'])
 def submit_room_feedback(room_id):
-    if not session.get('loggedin') or session.get('is_owner'):
-        flash('Only students can submit room feedback.', 'danger')
-        return redirect(url_for('room_detail', room_id=room_id))
+    if not session.get('loggedin'):
+        return redirect(url_for('login'))
         
     user_id = session.get('user_id')
-    rating = request.form.get('rating')
+    
+    try:
+        scores = [int(request.form.get(f'q{i}')) for i in range(1, 11)]
+    except (TypeError, ValueError):
+        flash('Please answer all 10 satisfaction questions.', 'danger')
+        return redirect(url_for('room_detail', room_id=room_id))
+
     comment = request.form.get('comment')
     
-    if not rating:
-        flash('Rating is required.', 'danger')
-        return redirect(url_for('room_detail', room_id=room_id))
-        
+    overall_rating = sum(scores) / len(scores)
+    
     cursor = mysql.connection.cursor()
+    
+    cursor.execute("""
+        INSERT INTO room_reviews (room_id, user_id, q1_clean, q2_accuracy, q3_amenities, 
+        q4_location, q5_value, q6_owner, q7_noise, q8_ventilation, q9_maintenance, q10_overall, comment) 
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", 
+        (room_id, user_id, *scores, comment))
+        
     cursor.execute("INSERT INTO feedback (user_id, room_id, rating, comment) VALUES (%s,%s,%s,%s)", 
-                   (user_id, room_id, int(rating), comment))
+                   (user_id, room_id, overall_rating, comment))
+                   
     mysql.connection.commit()
     cursor.close()
     
-    flash('Thank you for your feedback!', 'success')
+    flash(f'Review submitted! Your calculated rating is {overall_rating:.1f}/5', 'success')
     return redirect(url_for('room_detail', room_id=room_id))
 
-# app.py (Add this new function)
 
 @app.route('/owner_requests')
 def owner_requests():
-    # ... (Access checks remain) ...
 
     owner_id = session.get('user_id')
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    
-    # Fetch all requests + COUNT the uploaded documents
+
     cursor.execute("""
         SELECT b.id, r.address, r.room_type, r.max_people, b.num_people_booking, b.request_status,
                u.username AS requester_username, u.email AS requester_email, u.mobile AS requester_mobile,
@@ -787,7 +714,7 @@ def owner_requests():
     """, (owner_id,))
     requests = cursor.fetchall()
     cursor.close()
-        
+
     return render_template('owner_requests.html', requests=requests)
 
 @app.route('/respond_request/<int:booking_id>/<string:action>', methods=['POST'])
@@ -802,30 +729,27 @@ def respond_request(booking_id, action):
 
     new_status = 'approved' if action == 'approve' else 'rejected'
     owner_id = session.get('user_id')
-    
+
     cursor = mysql.connection.cursor()
-    
-    # Ensure the request belongs to a room owned by the user and is currently pending
+
     cursor.execute("""
         UPDATE bookings b
         JOIN rooms r ON b.room_id = r.id
         SET b.request_status = %s, b.owner_response_at = NOW()
         WHERE b.id = %s AND r.owner_id = %s AND b.request_status = 'pending'
     """, (new_status, booking_id, owner_id))
-    
+
     mysql.connection.commit()
-    
+
     if cursor.rowcount > 0:
         flash(f'Request {new_status} successfully.', 'success')
     else:
         flash('Request not found, already processed, or access denied.', 'danger')
-        
+
     cursor.close()
     return redirect(url_for('owner_requests'))
 
-# app.py (Add this new function)
 
-# app.py (Replace existing verify_booking function)
 
 @app.route('/verify_booking/<int:booking_id>', methods=['GET', 'POST'])
 def verify_booking(booking_id):
@@ -835,8 +759,7 @@ def verify_booking(booking_id):
 
     user_id = session.get('user_id')
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    
-    # Fetch booking, ensuring it's approved and belongs to the user
+
     cursor.execute("""
         SELECT b.id, b.room_id, r.address, b.request_status, b.num_people_booking
         FROM bookings b
@@ -849,21 +772,19 @@ def verify_booking(booking_id):
         flash('Booking not found or not yet approved by the owner.', 'danger')
         cursor.close()
         return redirect(url_for('dashboard'))
-    
+
     if request.method == 'POST':
         required_docs = booking['num_people_booking']
         uploaded_count = 0
-        
-        # 1. Check for required number of documents
+
         for i in range(1, required_docs + 1):
             file_key = f'doc_{i}'
             name_key = f'name_{i}'
-            
+
             f = request.files.get(file_key)
             user_name = request.form.get(name_key)
-            
+
             if f and f.filename and user_name:
-                # 2. Insert document and name into booking_documents table
                 cursor.execute("""
                     INSERT INTO booking_documents (booking_id, user_id_fk, document_name, document_file)
                     VALUES (%s, %s, %s, %s)
@@ -871,31 +792,25 @@ def verify_booking(booking_id):
                 uploaded_count += 1
 
         if uploaded_count == required_docs:
-            # 3. Update master booking status to 'verified'
             cursor.execute("""
                 UPDATE bookings
                 SET request_status = 'verified'
                 WHERE id = %s
             """, (booking_id,))
-            
+
             mysql.connection.commit()
             flash(f'Verification successful! {uploaded_count} documents uploaded. Your booking is confirmed.', 'success')
             cursor.close()
             return redirect(url_for('room_detail', room_id=booking['room_id']))
         else:
             flash(f'Error: You must upload {required_docs} documents (one per person). Only {uploaded_count} found.', 'danger')
-            # Resetting to GET method to show the form again
             cursor.close()
             return redirect(url_for('verify_booking', booking_id=booking_id))
 
-    # GET request: Render form, knowing how many docs are needed
     cursor.close()
     return render_template('verify_booking.html', booking=booking)
 
 
-# --------------------------------------------
-# ---------- ADMIN LOGIN & DASHBOARD ----------
-# --------------------------------------------
 @app.route('/admin', methods=['GET','POST'])
 def admin_login():
     if request.method == 'POST':
@@ -911,27 +826,24 @@ def admin_login():
 def admin_dashboard():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
-        
+
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    
-    # Fetch all users
+
     cur.execute("SELECT id, name, username, email, mobile, city, owner, gender, created_at FROM users")
     users = cur.fetchall()
-    
-    # Fetch recent feedback (App & Room)
+
     cur.execute("SELECT f.*, u.username, r.address FROM feedback f LEFT JOIN users u ON f.user_id = u.id LEFT JOIN rooms r ON f.room_id = r.id ORDER BY f.created_at DESC")
     feedbacks = cur.fetchall()
-    
-    # Aggregate stats (Enhanced)
+
     cur.execute("SELECT COUNT(*) AS total_users, SUM(CASE WHEN owner = '1' THEN 1 ELSE 0 END) AS total_owners, SUM(CASE WHEN owner = '0' THEN 1 ELSE 0 END) AS total_students FROM users")
     user_agg = cur.fetchone()
-    
+
     cur.execute("SELECT COUNT(*) AS total_rooms, AVG(rent) AS avg_rent, AVG(num_rooms) AS avg_num_rooms FROM rooms")
     room_agg = cur.fetchone()
 
     cur.execute("SELECT AVG(rating) as avg_rating, COUNT(*) as total_feedback FROM feedback WHERE room_id IS NULL")
     app_feedback_agg = cur.fetchone()
-    
+
     cur.execute("SELECT SUM(total_time_spent) AS total_seconds FROM users")
     time_agg = cur.fetchone()
 
@@ -945,7 +857,7 @@ def admin_dashboard():
         avg_seconds_spent = 0
 
     cur.close()
-    
+
     summary = {
         'total_users': user_agg['total_users'],
         'total_owners': user_agg['total_owners'],
@@ -957,7 +869,7 @@ def admin_dashboard():
         'total_time_spent_formatted': format_seconds(total_seconds_spent),
         'avg_time_spent_formatted': format_seconds(avg_seconds_spent),
     }
-    
+
     return render_template('admin_dashboard.html', users=users, feedbacks=feedbacks, summary=summary)
 
 @app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
@@ -976,18 +888,17 @@ def admin_user_detail(user_id):
     if not session.get('admin_logged_in'):
         flash('Admin access required.', 'danger')
         return redirect(url_for('admin_login'))
-    
+
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cur.execute("SELECT id, name, username, email, mobile, city, owner, gender, created_at, last_seen, total_time_spent FROM users WHERE id = %s", (user_id,))
     user = cur.fetchone()
-    # Fetch user details including the last_seen timestamp
     cur.execute("""
         SELECT id, name, username, email, mobile, city, owner, gender, created_at, last_seen, total_time_spent 
         FROM users 
         WHERE id = %s
     """, (user_id,))
     user = cur.fetchone()
-    
+
     cur.close()
     total_time_formatted = format_seconds(user['total_time_spent'])
     time_diff = None
@@ -999,27 +910,22 @@ def admin_user_detail(user_id):
         flash('User not found.', 'danger')
         return redirect(url_for('admin_dashboard'))
 
-    # Calculate status: User is considered "Online" if last_seen is within the last 5 minutes (300 seconds)
     status = "Offline"
     time_diff = None
-    
+
     if user['last_seen']:
-        # Note: NOW() is MySQL time. Ensure Flask timezone is aligned or use UTC.
-        # This requires Python's datetime.
         now = datetime.datetime.now()
-        
-        # NOTE: MySQLdb/Flask often fetch TIMESTAMPs as datetime objects
+
         last_seen_dt = user['last_seen']
 
         if isinstance(last_seen_dt, datetime.datetime):
             time_diff = now - last_seen_dt
-            
-            # Check if active in the last 300 seconds (5 minutes)
+
             if time_diff.total_seconds() > 120: 
                 status = "Online"
             else:
-                status = "Inactive" # Logged in recently but not active now
-        
+                status = "Inactive"             
+
     return render_template('admin_user_detail.html', 
                            user=user, 
                            status=status, 
@@ -1028,14 +934,9 @@ def admin_user_detail(user_id):
 
 @app.route('/admin/logout')
 def admin_logout():
-    # Clear the admin session variable
     session.pop('admin_logged_in', None)
-    
+
     flash('Admin logged out successfully.', 'info')
-    # Redirect back to the admin login page
     return redirect(url_for('admin_login'))
-# --------------------------
-# ---------- RUN ----------
-# --------------------------
 if __name__ == '__main__':
     app.run(debug=True)
