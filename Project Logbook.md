@@ -1,7 +1,7 @@
 # Project Logbook  
 ### **Project Title:** Rental Room Finder for College Students  
 
-| Sr.No | Contents / Activity                                                   | Date        |
+| Sr.No | Contents                                                              | Date        |
 |-------|-----------------------------------------------------------------------|-------------|
 | 1     | Project Group Formation.                                              | 28-07-2025  |
 | 2     | Project Topic Finalization.                                           | 23-08-2025  |
