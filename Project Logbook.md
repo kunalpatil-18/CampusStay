@@ -2,7 +2,6 @@
 ### **Project Title:** Rental Room Finder for College Students  
 ---
 ## Index
-
 | Sr.No | Week No | Contents                         | Date                    |
 |------:|:-------:|----------------------------------|-------------------------|
 | 1     | Week 01 | Project Group Formation          | 28/07/2025 – 02/08/2025 |
