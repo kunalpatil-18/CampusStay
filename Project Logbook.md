@@ -1,6 +1,5 @@
 # Project Logbook  
 ### **Project Title:** Rental Room Finder for College Students  
----
 ## Index
 | Sr.No | Week No | Contents                         | Date                    |
 |------:|:-------:|----------------------------------|-------------------------|
