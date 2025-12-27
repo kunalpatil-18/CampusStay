@@ -2,11 +2,6 @@
 ### **Project Title:** Rental Room Finder for College Students  
 ---
 
-##  Project Overview
-The *Rental Room Finder for College Students* is a web-based application designed to help students find affordable and verified rental rooms near their colleges. It allows room owners to list rooms and students to search, filter, and directly communicate with owners.
-
----
-
 ## Index
 
 | Sr.No | Week No | Contents                         | Date                    |
