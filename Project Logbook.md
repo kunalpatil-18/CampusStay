@@ -19,7 +19,7 @@
 | 14    | Results and Discussion/ Project Monitoring – 3.                       | 13-11-2025  |
 | 15    | Report Writing and Conclusions /Bibliography                          | 19-11-2025  |
 
----
+
 
 **Project Description:**  
 The *Rental Room Finder for College Students* is a web-based platform designed to help students find affordable and verified rental rooms near their colleges. It enables owners to list rooms and students to search, filter, and book based on their preferences.  
