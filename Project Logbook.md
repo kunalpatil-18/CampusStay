@@ -9,7 +9,7 @@ The *Rental Room Finder for College Students* is a web-based application designe
 
 ## Index
 
-| Sr.No | Week No | Contents                         | Weekly Date             |       |
+| Sr.No | Week No | Contents                         | Date                    |
 |------:|:-------:|----------------------------------|-------------------------|
 | 1     | Week 01 | Project Group Formation          | 28/07/2025 – 02/08/2025 |
 | 2     | Week 02 | Project Topic Finalization       | 04/08/2025 – 16/08/2025 |
@@ -22,7 +22,6 @@ The *Rental Room Finder for College Students* is a web-based application designe
 | 9     | Week 09 | System Testing                   | 29/10/2025 – 01/11/2025 |
 | 10    | Week 10 | Results & Analysis               | 03/11/2025 – 08/11/2025 |
 | 11    | Week 11 | Final Report & Conclusion        | 10/11/2025 – 15/11/2025 |
-
 ---
 link:https://github.com/kunalpatil-18/CampusStay
 
