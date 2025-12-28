@@ -82,6 +82,7 @@ Implementation planning.
 
 **Guide Interaction:**  
 Guide suggested adding room details like **BHK type** and **occupancy capacity**.
+
 **Next Plan:**  
 Frontend–backend integration.
 
